@@ -1,8 +1,12 @@
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { jwtDecode } from 'jwt-decode';
+import { generateAccessToken, generateRefreshToken } from './JwtService';
 import db from '../models';
 import EmailService from './EmailService';
 
 let salt = bcrypt.genSaltSync(10);
+let otpData = {};
 
 let hashUserPassword = (password) => {
     return new Promise(async (resolve, reject) => {
@@ -34,6 +38,26 @@ let checkEmail = (email) => {
     });
 };
 
+// Hàm sinh mã OTP ngẫu nhiên với độ dài xác định
+let generateOTP = (length) => {
+    const digits = '0123456789';
+    let OTP = '';
+
+    for (let i = 0; i < length; i++) {
+        OTP += digits[Math.floor(Math.random() * 10)];
+    }
+
+    return OTP;
+};
+
+let generateOTPWithExpiry = () => {
+    const otp = generateOTP(6);
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 5); // Thời gian hết hạn sau 5 phút
+
+    return { otp, expiry };
+};
+
 let sendOtpCode = (email) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -44,13 +68,42 @@ let sendOtpCode = (email) => {
                     message: 'Your email is already in used. Please try another!',
                 });
             } else {
-                let data = await EmailService.sendOTPEmail(email);
-                console.log(data);
+                otpData = generateOTPWithExpiry();
+                await EmailService.sendOTPEmail(email, otpData);
                 resolve({
                     errCode: 0,
                     message: 'Send opt code successfully!',
                 });
             }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+const verifyOtpCode = (enteredOTP) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let result = {};
+
+            if (new Date() > new Date(otpData.expiry)) {
+                result = {
+                    errCode: 2,
+                    message: 'Mã OTP đã hết hạn. Vui lòng yêu cầu mã OTP mới.',
+                };
+            }
+            if (otpData.otp === enteredOTP) {
+                result = {
+                    errCode: 0,
+                    message: 'Mã OTP hợp lệ.',
+                };
+            } else {
+                result = {
+                    errCode: 3,
+                    message: 'Mã OTP không đúng. Vui lòng thử lại.',
+                };
+            }
+            resolve(result);
         } catch (error) {
             reject(error);
         }
@@ -90,38 +143,37 @@ let createNewUser = (data) => {
     });
 };
 
-let login = (data) => {
+let login = (data, res) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let { email, password } = data;
+            const { email, password } = data;
             let userData = {};
 
-            let isExist = await checkEmail(email);
-            if (isExist) {
-                let user = await db.User.findOne({
-                    where: {
-                        email: email,
-                    },
-                });
-                if (user) {
-                    let check = await bcrypt.compareSync(password, user.password);
-                    if (check) {
-                        userData.errCode = 0;
-                        userData.errMessage = 'OK';
-                        delete user.password;
-                        userData.user = user;
-                        resolve(userData);
-                    } else {
-                        (userData.errCode = 3), (userData.errMessage = `Wrong password!`);
-                        resolve(userData);
-                    }
+            let user = await db.User.findOne({
+                where: {
+                    email: email,
+                },
+            });
+            if (user) {
+                let isPasswordMatch = await bcrypt.compareSync(password, user.password);
+                if (isPasswordMatch) {
+                    // Generate tokens securely
+                    const access_token = generateAccessToken(user);
+                    const refresh_token = generateRefreshToken(user);
+
+                    userData.errCode = 0;
+                    userData.errMessage = 'Login successful';
+                    delete user.password;
+                    userData.user = user;
+                    userData.tokens = { access_token, refresh_token };
+
+                    resolve(userData);
                 } else {
-                    (userData.errCode = 2), (userData.errMessage = `User is not found!`);
+                    (userData.errCode = 3), (userData.errMessage = `Wrong password!`);
                     resolve(userData);
                 }
             } else {
-                (userData.errCode = 1),
-                    (userData.errMessage = `Your email is not found in the system. Please try again!`);
+                (userData.errCode = 2), (userData.errMessage = `User is not found!`);
                 resolve(userData);
             }
         } catch (error) {
@@ -267,4 +319,5 @@ module.exports = {
     getAllCodeServices,
     checkEmail,
     sendOtpCode,
+    verifyOtpCode,
 };

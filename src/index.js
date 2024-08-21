@@ -6,6 +6,7 @@ import dotenvFlow from 'dotenv-flow';
 import initWebRoutes from './routes/web';
 import viewEngine from './config/viewEngine';
 import connectDB from './config/connectDB';
+import cookieParser from 'cookie-parser';
 
 dotenvFlow.config();
 
@@ -20,9 +21,15 @@ app.use(
         extended: true,
     }),
 );
-app.use(cors({ origin: true }));
+app.use(
+    cors({
+        origin: true,
+        credentials: true,
+    }),
+);
 
-viewEngine(app);
+app.use(cookieParser());
+
 initWebRoutes(app);
 
 // connect to DB

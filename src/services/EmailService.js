@@ -38,10 +38,7 @@ const sendEmailCreateBooking = async (bookingData) => {
     });
 };
 
-const sendOTPEmail = async (clientEmail) => {
-    let optData = generateOTPWithExpiry();
-    console.log('optData', optData);
-
+const sendOTPEmail = async (clientEmail, otpData) => {
     let transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 465,
@@ -59,29 +56,9 @@ const sendOTPEmail = async (clientEmail) => {
         subject: 'OTP Code',
         text: 'Xin chào,',
         html: `
-      <p><u>${optData?.otp}</u> la ma xac thuc OPT cua quy khach. Ma co hieu luc trong 5 phut</p>
+      <p><u>${otpData?.otp}</u> la ma xac thuc OPT cua quy khach. Ma co hieu luc trong 5 phut</p>
     `,
     });
-};
-
-// Hàm sinh mã OTP ngẫu nhiên với độ dài xác định
-const generateOTP = (length) => {
-    const digits = '0123456789';
-    let OTP = '';
-
-    for (let i = 0; i < length; i++) {
-        OTP += digits[Math.floor(Math.random() * 10)];
-    }
-
-    return OTP;
-};
-
-const generateOTPWithExpiry = () => {
-    const otp = generateOTP(6);
-    const expiry = new Date();
-    expiry.setMinutes(expiry.getMinutes() + 5); // Thời gian hết hạn sau 5 phút
-
-    return { otp, expiry };
 };
 
 module.exports = { sendEmailCreateBooking, sendOTPEmail };
