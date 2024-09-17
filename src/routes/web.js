@@ -1,6 +1,7 @@
 import express from 'express';
 import userController from '../controllers/userController';
 import doctorController from '../controllers/doctorController';
+import patientController from '../controllers/patientController';
 import { userIsAuthenticated, isAdmin, isDoctor } from '../middleware/authMiddleware';
 
 let router = express.Router();
@@ -20,6 +21,7 @@ let initWebRoutes = (app) => {
     router.post('/api/create-schedule-time', userIsAuthenticated, doctorController.createScheduleTime);
 
     // patient
+    router.post('/api/booking-appointment', userIsAuthenticated, patientController.bookingAppointment);
 
     // guests
     router.get('/api/get-users', userController.getAllUsers);

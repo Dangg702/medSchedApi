@@ -2,8 +2,9 @@ const nodemailer = require('nodemailer');
 const dotenvFlow = require('dotenv-flow');
 dotenvFlow.config();
 
-const sendEmailCreateBooking = async (bookingData) => {
-    let clientMail = bookingData.contactInfo.email;
+const sendEmailCreateBooking = async (data) => {
+    let clientMail = data.patientEmail;
+    console.log(data);
 
     let transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
@@ -14,28 +15,38 @@ const sendEmailCreateBooking = async (bookingData) => {
             pass: process.env.MAIL_PASSWORD,
         },
     });
-    // send mail with defined transport object
     let info = await transporter.sendMail({
         from: process.env.MAIL_ACCOUNT,
         to: clientMail,
-        subject: 'Booking Confirmation',
-        text: 'Your booking has been confirmed!',
-        // html: `
-        //     <h1>Booking Confirmation</h1>
-        //     <p>Dear Patient,</p>
-        //     <p>Your booking has been confirmed. Please find the details below:</p>
-        //     <p><strong>Booking ID:</strong> ${bookingData._id} </p>
-        //     <p><strong>:</strong> ${bookingData.tourId._id} </p>
-        //     <p><strong>Tour Name:</strong> ${bookingData.tourId.name}</p>
-        //     <p><strong>Number of people:</strong> ${bookingData.numOfPeople}</p>
-        //     <p><strong>Date go:</strong> ${bookingData.tourId.dateGo}</p>
-        //     <p><strong>Date back:</strong> ${bookingData.tourId.dateBack}</p>
-        //     <p><strong>Time:</strong> 05:00 AM</p>
-        //     <p>Thank you for choosing our service.</p>
-        //     <p>Best regards,</p>
-        //     <p>Viet Travel</p>
-        // `,
+        subject: data.language === 'vi' ? 'Xác nhận đặt khám tại MedSched' : 'Confirmed booking at MedSched',
+        html: createHtmlMail(data),
     });
+};
+
+const createHtmlMail = (data) => {
+    if (data.language === 'vi') {
+        return `
+            <p>Gửi ${data?.patientName},</p>
+            <p>Bạn đã đặt lịch khám với Bác sĩ <strong>${data?.doctorName}</strong>. </p>
+            <p><strong>Giờ khám:</strong> ${data?.timeVal} </p>
+            <p><strong>Ngày:</strong> ${data?.date} </p>
+            <p>Nếu thông tin trên là đúng, vui lòng nhấn vào đường dẫn bên dưới để xác nhận và hoàn tất thủ tục.</p>
+            <a href="${process.env.CLIENT_URL}/confirm-booking/${data?.bookingId}" target="_blank">Xác nhận</a>
+
+            <p>Cảm ơn bạn đã lựa chọn dịch vụ của chúng tôi.</p>
+        `;
+    } else if (data.language === 'en') {
+        return `
+            <p>Dear ${data?.patientName},</p>
+            <p>You have booked an appointment with Dr. <strong>${data?.doctorName}</strong>. </p>
+            <p><strong>Time:</strong> ${data?.timeVal} </p>
+            <p><strong>Date:</strong> ${data?.date} </p>
+            <p>If the information above is correct, please click the link below to confirm and complete the procedure.</p>
+            <a href="${process.env.CLIENT_URL}/confirm-booking/${data?.bookingId}" target="_blank">Confirm</a>
+
+            <p>Thank you for choosing our service.</p>
+        `;
+    }
 };
 
 const sendOTPEmail = async (clientEmail, otpData) => {

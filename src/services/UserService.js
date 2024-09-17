@@ -217,7 +217,7 @@ let getAllUsers = (userId, page, per_page) => {
                     },
                 });
             }
-            console.log(users);
+            // console.log(users);
             resolve(users);
         } catch (error) {
             reject(error);
