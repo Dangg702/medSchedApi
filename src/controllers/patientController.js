@@ -20,6 +20,27 @@ const bookingAppointment = async (req, res) => {
     }
 };
 
+const verifyBookingAppointment = async (req, res) => {
+    try {
+        let data = req.body;
+        if (!data) {
+            res.status(500).json({
+                errCode: 1,
+                message: 'Missing booking information',
+            });
+        }
+        let result = await PatientService.verifyBookingAppointment(data);
+        res.status(200).json(result);
+    } catch (error) {
+        console.log('Error verifyBookingAppointment', error);
+        return res.status(200).json({
+            errCode: -1,
+            message: 'Error from server',
+        });
+    }
+};
+
 module.exports = {
     bookingAppointment,
+    verifyBookingAppointment,
 };

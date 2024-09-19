@@ -22,6 +22,7 @@ let initWebRoutes = (app) => {
 
     // patient
     router.post('/api/booking-appointment', userIsAuthenticated, patientController.bookingAppointment);
+    router.post('/api/verify-booking-appointment', userIsAuthenticated, patientController.verifyBookingAppointment);
 
     // guests
     router.get('/api/get-users', userController.getAllUsers);

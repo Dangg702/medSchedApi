@@ -4,7 +4,6 @@ dotenvFlow.config();
 
 const sendEmailCreateBooking = async (data) => {
     let clientMail = data.patientEmail;
-    console.log(data);
 
     let transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
@@ -31,7 +30,7 @@ const createHtmlMail = (data) => {
             <p><strong>Giờ khám:</strong> ${data?.timeVal} </p>
             <p><strong>Ngày:</strong> ${data?.date} </p>
             <p>Nếu thông tin trên là đúng, vui lòng nhấn vào đường dẫn bên dưới để xác nhận và hoàn tất thủ tục.</p>
-            <a href="${process.env.CLIENT_URL}/confirm-booking/${data?.bookingId}" target="_blank">Xác nhận</a>
+            <a href="${data?.verifyUrl}" target="_blank">Xác nhận</a>
 
             <p>Cảm ơn bạn đã lựa chọn dịch vụ của chúng tôi.</p>
         `;
@@ -42,7 +41,7 @@ const createHtmlMail = (data) => {
             <p><strong>Time:</strong> ${data?.timeVal} </p>
             <p><strong>Date:</strong> ${data?.date} </p>
             <p>If the information above is correct, please click the link below to confirm and complete the procedure.</p>
-            <a href="${process.env.CLIENT_URL}/confirm-booking/${data?.bookingId}" target="_blank">Confirm</a>
+            <a href="${data?.verifyUrl}" target="_blank">Confirm</a>
 
             <p>Thank you for choosing our service.</p>
         `;

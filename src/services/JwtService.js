@@ -23,7 +23,7 @@ const refreshTokenJwtService = (token) => {
                 });
             }
             const accessToken = generateAccessToken({ id: user.id, isAdmin: user.isAdmin });
-            console.log('accessToken: ', accessToken);
+            // console.log('accessToken: ', accessToken);
             resolve({
                 message: 'Success',
                 status: 0,
