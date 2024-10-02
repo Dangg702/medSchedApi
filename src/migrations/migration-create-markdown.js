@@ -31,7 +31,6 @@ module.exports = {
             },
             description: {
                 allowNull: true,
-
                 type: Sequelize.TEXT('long'),
             },
             createdAt: {

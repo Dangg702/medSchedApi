@@ -2,7 +2,6 @@ import db from '../models';
 import _ from 'lodash';
 import moment from 'moment';
 import dotenvFlow from 'dotenv-flow';
-import { where } from 'sequelize';
 dotenvFlow.config();
 const MAX_SCHEDULE_NUMBER = process.env.MAX_SCHEDULE_NUMBER || 10;
 
@@ -67,6 +66,8 @@ const postInfoDoctor = (data) => {
                 !data.selectedPrice ||
                 !data.selectedCity ||
                 !data.selectedPayment ||
+                !data.selectedSpecialty ||
+                !data.selectedClinic ||
                 !data.nameClinic ||
                 !data.addressClinic ||
                 !data.note
@@ -113,6 +114,8 @@ const postInfoDoctor = (data) => {
                             priceId: data.selectedPrice,
                             provinceId: data.selectedCity,
                             paymentId: data.selectedPayment,
+                            specialtyId: data.selectedSpecialty,
+                            clinicId: data.selectedClinic,
                             addressClinic: data.addressClinic,
                             nameClinic: data.nameClinic,
                             note: data.note,
@@ -129,6 +132,8 @@ const postInfoDoctor = (data) => {
                         priceId: data.selectedPrice,
                         provinceId: data.selectedCity,
                         paymentId: data.selectedPayment,
+                        specialtyId: data.selectedSpecialty,
+                        clinicId: data.selectedClinic,
                         addressClinic: data.addressClinic,
                         nameClinic: data.nameClinic,
                         note: data.note,
@@ -226,7 +231,7 @@ const getExtraInfoDoctorById = (doctorId) => {
     return new Promise(async (resolve, reject) => {
         try {
             let doctorData = await db.DoctorInfo.findOne({
-                where: { id: doctorId },
+                where: { doctorId: +doctorId },
                 attributes: {
                     exclude: ['id', 'doctorId', 'createdAt', 'updatedAt'],
                 },
@@ -337,6 +342,7 @@ const getScheduleTime = (doctorId, date) => {
         }
     });
 };
+
 module.exports = {
     getTopDoctor,
     getAllDoctors,
