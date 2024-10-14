@@ -1,5 +1,6 @@
 import UserService from '../services/UserService';
 import { refreshTokenJwtService } from '../services/JwtService';
+import { uploadImage } from '../untils/uploadImage';
 
 const handleLogin = async (req, res) => {
     let userData = req.body;
@@ -120,6 +121,9 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     let userId = req.query.id;
+    console.log('Updating user', req.body);
+    // console.log('updateUser', req.file.path);
+    // const imageUrl = await uploadImage(req.file.path);
     if (userId) {
         let response = await UserService.updateUserData(userId, req.body);
         return res.status(200).json(response);

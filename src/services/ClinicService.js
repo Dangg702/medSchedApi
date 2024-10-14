@@ -82,4 +82,49 @@ const getClinicDetailById = (clinicId) => {
     });
 };
 
-module.exports = { createClinic, getAllClinic, getClinicDetailById };
+const getClinics = (name, page, per_page) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let clinicList = {};
+            const offset = (page - 1) * per_page;
+
+            const queryOptions = {
+                attributes: {
+                    exclude: ['contentMarkdown', 'contentHtml', 'createdAt', 'updatedAt'],
+                },
+                order: [['id', 'DESC']],
+                raw: true,
+                nest: true,
+            };
+
+            if (name === 'ALL') {
+                if (page && per_page) {
+                    clinicList = await db.Clinic.findAndCountAll({
+                        ...queryOptions,
+                        offset,
+                        limit: per_page,
+                    });
+                    resolve({
+                        count: clinicList.count,
+                        rows: clinicList.rows,
+                    });
+                } else {
+                    clinicList = await db.Clinic.findAll(queryOptions);
+                    resolve(clinicList);
+                }
+            } else if (name) {
+                clinicList = await db.Clinic.findAndCountAll({
+                    where: { date },
+                    ...queryOptions,
+                    offset,
+                    limit: per_page,
+                });
+                resolve(clinicList);
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+module.exports = { createClinic, getAllClinic, getClinicDetailById, getClinics };

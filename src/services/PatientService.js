@@ -30,14 +30,15 @@ let bookingAppointment = (data) => {
                     message: 'Patient not found',
                 });
             }
-            let isBooking = await db.Booking.findAll({
+            let isBooking = await db.Booking.findOne({
                 where: {
+                    patientId: patientId,
                     doctorId: data.doctorId,
                     date: data.date,
                     statusId: { [db.Sequelize.Op.ne]: 'S3' },
                 },
             });
-            if (isBooking.length > 0) {
+            if (isBooking) {
                 return resolve({
                     errCode: 3,
                     message: 'Appointment limit has been reached',

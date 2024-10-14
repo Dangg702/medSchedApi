@@ -1,7 +1,8 @@
 import db from '../models';
-import _ from 'lodash';
+import _, { includes } from 'lodash';
 import moment from 'moment';
 import dotenvFlow from 'dotenv-flow';
+import { fn, col } from 'sequelize';
 dotenvFlow.config();
 const MAX_SCHEDULE_NUMBER = process.env.MAX_SCHEDULE_NUMBER || 10;
 
@@ -80,7 +81,7 @@ const postInfoDoctor = (data) => {
                 // for markdown table
                 if (data.action === 'create') {
                     await db.Markdown.create({
-                        doctorId: +data.selectedDoctor.value,
+                        date: +data.selectedDoctor.value,
                         contentHtml: data.contentHtml,
                         contentMarkdown: data.contentMarkdown,
                         description: data.description,
@@ -343,6 +344,222 @@ const getScheduleTime = (doctorId, date) => {
     });
 };
 
+const getListAppointmentPatients = (doctorId, date) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let data = await db.Booking.findAll({
+                where: {
+                    statusId: 'S2',
+                    doctorId,
+                    date,
+                },
+                attributes: ['patientId', 'doctorId', 'statusId', 'date', [col('timeType'), 'time']],
+                include: [
+                    {
+                        model: db.Allcode,
+                        as: 'statusData',
+                        attributes: ['valueEn', 'valueVi'],
+                    },
+                    {
+                        model: db.Allcode,
+                        as: 'timeBookingData',
+                        attributes: ['valueEn', 'valueVi'],
+                    },
+                    {
+                        model: db.User,
+                        as: 'patientData',
+                        attributes: ['firstName', 'lastName', 'gender', 'email', 'address', 'phoneNumber'],
+                        include: [{ model: db.Allcode, as: 'genderData', attributes: ['valueEn', 'valueVi'] }],
+                    },
+                ],
+                raw: true,
+                nest: true,
+            });
+            if (!data) data = [];
+            resolve({
+                errCode: 0,
+                data,
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+const confirmAppointment = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.doctorId || !data.patientId || !data.date || !data.timeType) {
+                resolve({
+                    errCode: 1,
+                    message: 'Missing required parameter. Please check again!',
+                });
+            } else {
+                const [updated] = await db.Booking.update(
+                    {
+                        statusId: 'S3',
+                    },
+                    {
+                        where: {
+                            patientId: data.patientId,
+                            doctorId: data.doctorId,
+                            date: data.date,
+                            timeType: data.timeType,
+                            statusId: 'S2',
+                        },
+                    },
+                );
+
+                if (updated) {
+                    resolve({
+                        errCode: 0,
+                        message: 'Confirm appointment successfully!',
+                    });
+                } else {
+                    resolve({
+                        errCode: 2,
+                        message: 'Appointment not found or already confirmed.',
+                    });
+                }
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+const cancelAppointment = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.doctorId || !data.patientId || !data.date || !data.timeType) {
+                resolve({
+                    errCode: 1,
+                    message: 'Missing required parameter. Please check again!',
+                });
+            } else {
+                const [updated] = await db.Booking.update(
+                    {
+                        statusId: 'S4',
+                    },
+                    {
+                        where: {
+                            patientId: data.patientId,
+                            doctorId: data.doctorId,
+                            date: data.date,
+                            timeType: data.timeType,
+                            statusId: 'S2',
+                        },
+                    },
+                );
+
+                if (updated) {
+                    resolve({
+                        errCode: 0,
+                        message: 'Cancel appointment successfully!',
+                    });
+                } else {
+                    resolve({
+                        errCode: 2,
+                        message: 'Appointment not found or already cancel.',
+                    });
+                }
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+const getAllSchedule = (date, page, per_page) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let scheduleList = {};
+            const offset = (page - 1) * per_page;
+
+            const queryOptions = {
+                attributes: {
+                    exclude: ['currentNumber', 'maxNumber', 'createdAt', 'updatedAt'],
+                },
+                include: [
+                    {
+                        model: db.Allcode,
+                        as: 'timeData',
+                        attributes: ['valueEn', 'valueVi'],
+                    },
+                    {
+                        model: db.User,
+                        as: 'doctorData',
+                        attributes: ['firstName', 'lastName'],
+                    },
+                ],
+                order: [['id', 'DESC']],
+                raw: true,
+                nest: true,
+            };
+
+            if (date === 'ALL') {
+                if (page && per_page) {
+                    scheduleList = await db.Schedule.findAndCountAll({
+                        ...queryOptions,
+                        offset,
+                        limit: per_page,
+                    });
+                    resolve({
+                        count: scheduleList.count,
+                        rows: scheduleList.rows,
+                    });
+                } else {
+                    scheduleList = await db.Schedule.findAll(queryOptions);
+                    resolve(scheduleList);
+                }
+            } else if (date) {
+                scheduleList = await db.Schedule.findAndCountAll({
+                    where: { date },
+                    ...queryOptions,
+                    offset,
+                    limit: per_page,
+                });
+                resolve(scheduleList);
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+const deleteSchedule = (id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!id) {
+                resolve({
+                    errCode: 1,
+                    message: 'Missing required parameter. Please check again!',
+                });
+            } else {
+                const deleted = await db.Schedule.destroy({
+                    where: {
+                        id: +id,
+                    },
+                });
+
+                if (deleted) {
+                    resolve({
+                        errCode: 0,
+                        message: 'Delete schedule successfully!',
+                    });
+                } else {
+                    resolve({
+                        errCode: 2,
+                        message: 'Schedule not found.',
+                    });
+                }
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
 module.exports = {
     getTopDoctor,
     getAllDoctors,
@@ -352,4 +569,9 @@ module.exports = {
     createScheduleTime,
     getScheduleTime,
     getExtraInfoDoctorById,
+    getListAppointmentPatients,
+    confirmAppointment,
+    cancelAppointment,
+    getAllSchedule,
+    deleteSchedule,
 };

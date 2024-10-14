@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import { generateAccessToken, generateRefreshToken } from './JwtService';
 import db from '../models';
 import EmailService from './EmailService';
+import { uploadImage } from '../untils/uploadImage';
 
 let salt = bcrypt.genSaltSync(10);
 let otpData = {};
@@ -131,7 +132,7 @@ let createNewUser = (data) => {
                 phoneNumber: data.phoneNumber && data.phoneNumber.trim(),
                 roleId: data.role && data.role,
                 positionId: data.position && data.position,
-                image: data.avatar && data.avatar,
+                image: data.image && data.image,
             });
             resolve({
                 errCode: 0,
@@ -241,16 +242,24 @@ let updateUserData = (id, data) => {
                         });
                     }
                 }
-                await db.User.update(
-                    {
-                        ...data,
-                    },
-                    {
-                        where: {
-                            id: id,
-                        },
-                    },
-                );
+                // console.log('updateUserData service', data);
+                // await db.User.update(
+                //     {
+                //         gender: data.gender,
+                //         firstName: data.firstName && data.firstName.trim(),
+                //         lastName: data.lastName && data.lastName.trim(),
+                //         address: data.address && data.address.trim(),
+                //         phoneNumber: data.phoneNumber && data.phoneNumber.trim(),
+                //         roleId: data.role && data.role,
+                //         positionId: data.position && data.position,
+                //         image: data.image && data.image,
+                //     },
+                //     {
+                //         where: {
+                //             id: id,
+                //         },
+                //     },
+                // );
                 resolve({
                     errCode: 0,
                     message: 'OK',
