@@ -40,7 +40,28 @@ const verifyBookingAppointment = async (req, res) => {
     }
 };
 
+const getListAppointmentOfPatient = async (req, res) => {
+    try {
+        let patientId = req.query.id;
+        if (!patientId) {
+            return res.status(200).json({
+                errCode: 1,
+                message: 'Missing required parameter. Please check again!',
+            });
+        }
+        let data = await PatientService.getListAppointmentOfPatient(patientId);
+        return res.status(200).json(data);
+    } catch (error) {
+        console.log('Error getListAppointmentOfPatient: ', error);
+        return res.status(200).json({
+            errCode: -1,
+            message: 'Error from server',
+        });
+    }
+};
+
 module.exports = {
     bookingAppointment,
     verifyBookingAppointment,
+    getListAppointmentOfPatient,
 };

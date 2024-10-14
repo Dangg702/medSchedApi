@@ -128,4 +128,53 @@ let verifyBookingAppointment = (data) => {
     });
 };
 
-module.exports = { bookingAppointment, verifyBookingAppointment };
+let getListAppointmentOfPatient = async (patientId) => {
+    try {
+        if (!patientId) {
+            return {
+                errCode: 1,
+                message: 'Missing required information',
+            };
+        }
+        let data = await db.Booking.findAll({
+            where: { patientId, statusId: 'S2' },
+            attribute: ['date', 'timeType', 'statusId'],
+            include: [
+                {
+                    model: db.User,
+                    as: 'doctorBookingData',
+                    attribute: ['firstName', 'lastName'],
+                    include: [
+                        {
+                            model: db.DoctorInfo,
+                            as: 'doctorInfoData',
+                            include: [
+                                { model: db.Clinic, as: 'clinicData', attribute: ['address', 'name'] },
+                                { model: db.Specialty, as: 'specialtyData', attribute: ['valueVi', 'valueEn'] },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    model: db.Allcode,
+                    as: 'timeBookingData',
+                    attribute: ['valueVi', 'valueEn'],
+                },
+            ],
+            raw: true,
+            nest: true,
+        });
+        return {
+            errCode: 0,
+            message: 'OK',
+            data,
+        };
+    } catch (error) {
+        return {
+            errCode: -1,
+            message: error.message,
+        };
+    }
+};
+
+module.exports = { bookingAppointment, verifyBookingAppointment, getListAppointmentOfPatient };
