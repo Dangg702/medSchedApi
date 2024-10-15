@@ -20,7 +20,7 @@ let initWebRoutes = (app) => {
     router.patch('/api/update-user', userIsAuthenticated, isAdmin,upload.single('image') , userController.updateUser);
     router.delete('/api/delete-user', userIsAuthenticated, isAdmin, userController.deleteUser);
     router.get('/api/get-all-code', userController.getAllCode);
-    router.post('/api/create-specialty', userIsAuthenticated, isAdmin, specialtyController.createSpecialty);
+    router.post('/api/create-specialty', userIsAuthenticated, isAdmin,upload.single('image'),  specialtyController.createSpecialty);
     router.post('/api/create-clinic', userIsAuthenticated, isAdmin, clinicController.createClinic);
     router.get('/api/get-list-schedule', userIsAuthenticated, doctorController.getAllSchedule);
     router.delete('/api/delete-schedule', userIsAuthenticated, doctorController.deleteSchedule);
