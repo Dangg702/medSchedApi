@@ -4,6 +4,7 @@ const sequelize = new Sequelize('medsched', 'root', '123456', {
     host: 'localhost',
     dialect: 'mysql',
     logging: false,
+    port:'3303'
 });
 
 let connectDB = async () => {

@@ -5,6 +5,9 @@ import patientController from '../controllers/patientController';
 import specialtyController from '../controllers/specialtyController';
 import clinicController from '../controllers/clinicController';
 import { userIsAuthenticated, isAdmin, isDoctor } from '../middleware/authMiddleware';
+import multer from 'multer';
+const upload = multer({ dest: 'uploads/' });
+
 
 let router = express.Router();
 
@@ -13,8 +16,8 @@ let initWebRoutes = (app) => {
     router.post('/api/logout', userIsAuthenticated, userController.logout);
 
     // admin
-    router.post('/api/create-user', userIsAuthenticated, isAdmin, userController.createUser);
-    router.patch('/api/update-user', userIsAuthenticated, isAdmin, userController.updateUser);
+    router.post('/api/create-user', userIsAuthenticated, isAdmin,upload.single('image') , userController.createUser);
+    router.patch('/api/update-user', userIsAuthenticated, isAdmin,upload.single('image') , userController.updateUser);
     router.delete('/api/delete-user', userIsAuthenticated, isAdmin, userController.deleteUser);
     router.get('/api/get-all-code', userController.getAllCode);
     router.post('/api/create-specialty', userIsAuthenticated, isAdmin, specialtyController.createSpecialty);

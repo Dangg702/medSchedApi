@@ -115,23 +115,61 @@ const getAllUsers = async (req, res) => {
 };
 
 const createUser = async (req, res) => {
-    let response = await UserService.createNewUser(req.body);
-    return res.status(200).json(response);
+    try {
+        let imageUrl;
+        if (req.file) {
+            // Upload ảnh lên Cloudinary và lấy URL
+            imageUrl = await uploadImage(req.file.path);
+        }
+
+        // Tạo người dùng với thông tin đã cho
+        const userData = {
+            email: req.body.email,
+            password: req.body.password,
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            address: req.body.address,
+            phoneNumber: req.body.phoneNumber,
+            gender: req.body.gender,
+            image: imageUrl, // Lưu URL ảnh vào database
+            roleId: req.body.roleId,
+            positionId: req.body.positionId,
+        };
+
+        let response = await UserService.createNewUser(userData);
+        return res.status(200).json(response);
+    } catch (error) {
+        console.error('Lỗi lưu sản phẩm vào DB:', error);
+        return res.status(500).json({ error: 'Lỗi khi tạo người dùng' });
+    }
 };
 
 const updateUser = async (req, res) => {
     let userId = req.query.id;
     console.log('Updating user', req.body);
-    // console.log('updateUser', req.file.path);
-    // const imageUrl = await uploadImage(req.file.path);
-    if (userId) {
-        let response = await UserService.updateUserData(userId, req.body);
-        return res.status(200).json(response);
-    } else {
-        return res.status(200).json({
-            errCode: 1,
-            message: 'Missing required parameter! Please check again!',
-        });
+
+    try {
+        if (userId) {
+            let imageUrl;
+            // Kiểm tra nếu có file ảnh được upload
+            if (req.file) {
+                // Upload ảnh lên Cloudinary và lấy URL
+                imageUrl = await uploadImage(req.file.path);
+                // Thêm URL ảnh vào req.body để lưu vào database
+                req.body.image = imageUrl;
+            }
+
+            let response = await UserService.updateUserData(userId, req.body);
+            return res.status(200).json(response);
+        } else {
+            return res.status(200).json({
+                errCode: 1,
+                message: 'Missing required parameter! Please check again!',
+            });
+        }
+    } catch (error) {
+        console.error('Lỗi khi cập nhật người dùng:', error);
+        return res.status(500).json({ error: 'Lỗi khi cập nhật người dùng' });
     }
 };
 
