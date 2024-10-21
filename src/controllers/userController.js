@@ -14,8 +14,16 @@ const handleLogin = async (req, res) => {
 
     if (result.errCode === 0) {
         // set cookies
-        res.cookie('access_token', result.tokens?.access_token, { httpOnly: true });
-        res.cookie('refresh_token', result.tokens?.refresh_token, { httpOnly: true });
+        res.cookie('accessToken', result.tokens?.accessToken, { httpOnly: true });
+        res.cookie('refreshToken', result.tokens?.refreshToken, { httpOnly: true });
+
+        // Set cookies
+        // setRefreshTokenCookie(res, refreshToken);
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            // secure: true, // Nếu sử dụng HTTPS
+            sameSite: 'Strict',
+        });
         return res.status(200).json({
             errCode: result.errCode,
             message: result.errMessage,
@@ -33,8 +41,8 @@ const handleLogin = async (req, res) => {
 const logout = (req, res) => {
     try {
         // Xóa token từ cookie
-        res.clearCookie('access_token');
-        res.clearCookie('refresh_token');
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
         return res.status(200).json({
             errCode: 0,
             message: 'Logout successfully',
@@ -48,10 +56,12 @@ const logout = (req, res) => {
 };
 
 const refreshToken = async (req, res, next) => {
-    const token = req.headers.token.split(' ')[1];
-    if (!token) {
-        return res.status(404).json({ message: 'The token is required', errCode: -1 });
-    }
+    // const token = req.headers.token.split(' ')[1];
+    // if (!token) {
+    //     return res.status(404).json({ message: 'The token is required', errCode: -1 });
+    // }
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return res.sendStatus(401);
     const response = await refreshTokenJwtService(token);
     res.status(200).json({ message: 'Success', errCode: 0, data: response });
 };
@@ -146,16 +156,12 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     let userId = req.query.id;
-    console.log('Updating user', req.body);
 
     try {
         if (userId) {
             let imageUrl;
-            // Kiểm tra nếu có file ảnh được upload
             if (req.file) {
-                // Upload ảnh lên Cloudinary và lấy URL
                 imageUrl = await uploadImage(req.file.path);
-                // Thêm URL ảnh vào req.body để lưu vào database
                 req.body.image = imageUrl;
             }
 

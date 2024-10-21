@@ -8,20 +8,35 @@ import { userIsAuthenticated, isAdmin, isDoctor } from '../middleware/authMiddle
 import multer from 'multer';
 const upload = multer({ dest: 'uploads/' });
 
-
 let router = express.Router();
 
 let initWebRoutes = (app) => {
     router.post('/api/refresh-token', userController.refreshToken);
     router.post('/api/logout', userIsAuthenticated, userController.logout);
+    router.post('/api/login', userController.handleLogin);
+    router.post('/api/register', userController.createUser);
+    router.post('/api/generate-otp', userController.sendOtpCode);
+    router.post('/api/verify-otp', userController.verifyOtpCode);
 
     // admin
-    router.post('/api/create-user', userIsAuthenticated, isAdmin,upload.single('image') , userController.createUser);
-    router.patch('/api/update-user', userIsAuthenticated, isAdmin,upload.single('image') , userController.updateUser);
+    router.post('/api/create-user', userIsAuthenticated, isAdmin, upload.single('image'), userController.createUser);
+    router.patch('/api/update-user', userIsAuthenticated, isAdmin, upload.single('image'), userController.updateUser);
     router.delete('/api/delete-user', userIsAuthenticated, isAdmin, userController.deleteUser);
     router.get('/api/get-all-code', userController.getAllCode);
-    router.post('/api/create-specialty', userIsAuthenticated, isAdmin,upload.single('image'),  specialtyController.createSpecialty);
-    router.post('/api/create-clinic', userIsAuthenticated, isAdmin, clinicController.createClinic);
+    router.post(
+        '/api/create-specialty',
+        userIsAuthenticated,
+        isAdmin,
+        upload.single('image'),
+        specialtyController.createSpecialty,
+    );
+    router.post(
+        '/api/create-clinic',
+        userIsAuthenticated,
+        isAdmin,
+        upload.single('image'),
+        clinicController.createClinic,
+    );
     router.get('/api/get-list-schedule', userIsAuthenticated, doctorController.getAllSchedule);
     router.delete('/api/delete-schedule', userIsAuthenticated, doctorController.deleteSchedule);
     router.get('/api/get-clinics', userIsAuthenticated, clinicController.getClinics);
@@ -45,10 +60,6 @@ let initWebRoutes = (app) => {
 
     // guests
     router.get('/api/get-users', userController.getAllUsers);
-    router.post('/api/login', userController.handleLogin);
-    router.post('/api/generate-otp', userController.sendOtpCode);
-    router.post('/api/verify-otp', userController.verifyOtpCode);
-    router.post('api/register', userController.createUser);
     router.get('/api/get-doctor', doctorController.getDoctorById);
     router.get('/api/get-extra-info-doctor', doctorController.getExtraInfoDoctorById);
     router.get('/api/get-top-doctor', doctorController.getTopDoctor);

@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { jwtDecode } from 'jwt-decode';
-import { generateAccessToken, generateRefreshToken } from './JwtService';
+import { generateAccessToken, generateRefreshToken, setAccessTokenCookie } from './JwtService';
 import db from '../models';
 import EmailService from './EmailService';
 import { uploadImage } from '../untils/uploadImage';
@@ -93,7 +93,7 @@ const verifyOtpCode = (enteredOTP) => {
                     message: 'Mã OTP đã hết hạn. Vui lòng yêu cầu mã OTP mới.',
                 };
             }
-            if (otpData.otp === enteredOTP) {
+            if (otpData.otp === enteredOTP.trim()) {
                 result = {
                     errCode: 0,
                     message: 'Mã OTP hợp lệ.',
@@ -130,8 +130,8 @@ let createNewUser = (data) => {
                 lastName: data.lastName && data.lastName.trim(),
                 address: data.address && data.address.trim(),
                 phoneNumber: data.phoneNumber && data.phoneNumber.trim(),
-                roleId: data.role && data.role,
-                positionId: data.position && data.position,
+                roleId: data.roleId && data.roleId,
+                positionId: data.positionId && data.positionId,
                 image: data.image && data.image,
             });
             resolve({
@@ -159,14 +159,14 @@ let login = (data, res) => {
                 let isPasswordMatch = await bcrypt.compareSync(password, user.password);
                 if (isPasswordMatch) {
                     // Generate tokens securely
-                    const access_token = generateAccessToken(user);
-                    const refresh_token = generateRefreshToken(user);
+                    const accessToken = generateAccessToken(user);
+                    const refreshToken = generateRefreshToken(user);
 
                     userData.errCode = 0;
                     userData.errMessage = 'Login successful';
                     delete user.password;
                     userData.user = user;
-                    userData.tokens = { access_token, refresh_token };
+                    userData.tokens = { accessToken, refreshToken };
 
                     resolve(userData);
                 } else {
@@ -242,24 +242,23 @@ let updateUserData = (id, data) => {
                         });
                     }
                 }
-                // console.log('updateUserData service', data);
-                // await db.User.update(
-                //     {
-                //         gender: data.gender,
-                //         firstName: data.firstName && data.firstName.trim(),
-                //         lastName: data.lastName && data.lastName.trim(),
-                //         address: data.address && data.address.trim(),
-                //         phoneNumber: data.phoneNumber && data.phoneNumber.trim(),
-                //         roleId: data.role && data.role,
-                //         positionId: data.position && data.position,
-                //         image: data.image && data.image,
-                //     },
-                //     {
-                //         where: {
-                //             id: id,
-                //         },
-                //     },
-                // );
+                await db.User.update(
+                    {
+                        gender: data.gender,
+                        firstName: data.firstName && data.firstName.trim(),
+                        lastName: data.lastName && data.lastName.trim(),
+                        address: data.address && data.address.trim(),
+                        phoneNumber: data.phoneNumber && data.phoneNumber.trim(),
+                        roleId: data.roleId && data.roleId,
+                        positionId: data.positionId && data.positionId,
+                        image: data.image && data.image,
+                    },
+                    {
+                        where: {
+                            id: id,
+                        },
+                    },
+                );
                 resolve({
                     errCode: 0,
                     message: 'OK',

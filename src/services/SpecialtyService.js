@@ -14,6 +14,7 @@ const createSpecialty = (data) => {
                 defaults: {
                     valueVi: data.valueVi,
                     valueEn: data.valueEn,
+                    image: data.image || '',
                 },
             });
             if (!specialty) {

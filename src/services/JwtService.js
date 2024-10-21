@@ -22,8 +22,7 @@ const refreshTokenJwtService = (token) => {
                     status: -1,
                 });
             }
-            const accessToken = generateAccessToken({ id: user.id, isAdmin: user.isAdmin });
-            // console.log('accessToken: ', accessToken);
+            const accessToken = generateAccessToken({ id: user.id });
             resolve({
                 message: 'Success',
                 status: 0,
@@ -34,7 +33,7 @@ const refreshTokenJwtService = (token) => {
 };
 
 const setAccessTokenCookie = (res, accessToken) => {
-    res.cookie('access_token', accessToken, {
+    res.cookie('accessToken ', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // Đặt secure thành true trong môi trường production
         sameSite: 'strict',
@@ -43,7 +42,7 @@ const setAccessTokenCookie = (res, accessToken) => {
 };
 
 const setRefreshTokenCookie = (res, refreshToken) => {
-    res.cookie('refresh_token', refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // Đặt secure thành true trong môi trường production
         sameSite: 'strict',
