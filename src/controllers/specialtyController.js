@@ -32,16 +32,84 @@ const createSpecialty = async (req, res) => {
         });
     }
 };
-const getAllSpecialty = async (req, res) => {
+const editSpecialty = async (req, res) => {
     try {
-        let data = req.query;
-        if (!data) {
-            res.status(500).json({
+        let specialtyId = req.query.id;
+        let data = req.body;
+        if (specialtyId) {
+            let imageUrl;
+            if (req.file) {
+                imageUrl = await uploadImage(req.file.path);
+                data.image = imageUrl;
+            }
+            let response = await SpecialtyService.editSpecialty(specialtyId, data);
+            return res.status(200).json(response);
+        } else {
+            return res.status(200).json({
                 errCode: 1,
-                message: 'Missing required information',
+                message: 'Missing required parameter! Please check again!',
             });
         }
-        let result = await SpecialtyService.getAllSpecialty(data);
+    } catch (error) {
+        console.log('Error createSpecialty', error);
+        return res.status(500).json({
+            errCode: -1,
+            message: 'Error from server',
+        });
+    }
+};
+const deleteSpecialty = async (req, res) => {
+    try {
+        let id = +req.query.id;
+        if (!id) {
+            return res.status(200).json({
+                errCode: 1,
+                message: 'Missing required parameter! Please check again!',
+            });
+        }
+        let result = await SpecialtyService.deleteSpecialty(id);
+        return res.status(200).json(result);
+    } catch (error) {
+        console.log('Error deleteSpecialty', error);
+        return res.status(200).json({
+            errCode: -1,
+            message: 'Error from server',
+        });
+    }
+};
+const getAllSpecialty = async (req, res) => {
+    try {
+        let name = req.query.name; //All / Name
+        let page = parseInt(req.query.page);
+        let per_page = parseInt(req.query.per_page);
+
+        if (!name) {
+            return res.status(200).json({
+                errCode: 1,
+                message: 'Missing required parameter! Please check again!',
+                data: [],
+            });
+        } else {
+        }
+        if (name && page && per_page) {
+            let specialties = await SpecialtyService.getAllSpecialty(name, page, per_page);
+            return res.status(200).json({
+                errCode: 0,
+                message: 'OK',
+                total: specialties.count,
+                per_page: per_page,
+                page: page,
+                total_pages: Math.ceil(specialties.count / per_page),
+                data: specialties.rows,
+            });
+        } else if (name && !page && !per_page) {
+            let specialties = await SpecialtyService.getAllSpecialty(name);
+            return res.status(200).json({
+                errCode: 0,
+                message: 'OK',
+                data: specialties,
+            });
+        }
         res.status(200).json(result);
     } catch (error) {
         console.log('Error getAllSpecialty', error);
@@ -51,7 +119,6 @@ const getAllSpecialty = async (req, res) => {
         });
     }
 };
-
 const getDoctorsBySpecialtyId = async (req, res) => {
     try {
         let id = req.query.id;
@@ -76,4 +143,6 @@ module.exports = {
     createSpecialty,
     getAllSpecialty,
     getDoctorsBySpecialtyId,
+    editSpecialty,
+    deleteSpecialty,
 };

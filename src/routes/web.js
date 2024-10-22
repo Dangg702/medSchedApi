@@ -30,6 +30,14 @@ let initWebRoutes = (app) => {
         upload.single('image'),
         specialtyController.createSpecialty,
     );
+    router.patch(
+        '/api/update-specialty',
+        userIsAuthenticated,
+        isAdmin,
+        upload.single('image'),
+        specialtyController.editSpecialty,
+    );
+    router.delete('/api/delete-specialty', userIsAuthenticated, isAdmin, specialtyController.deleteSpecialty);
     router.post(
         '/api/create-clinic',
         userIsAuthenticated,
@@ -37,9 +45,17 @@ let initWebRoutes = (app) => {
         upload.single('image'),
         clinicController.createClinic,
     );
+    router.patch(
+        '/api/update-clinic',
+        userIsAuthenticated,
+        isAdmin,
+        upload.single('image'),
+        clinicController.updateClinic,
+    );
+    router.delete('/api/delete-clinic', userIsAuthenticated, isAdmin, clinicController.deleteClinic);
+    router.get('/api/get-clinics', userIsAuthenticated, clinicController.getClinics);
     router.get('/api/get-list-schedule', userIsAuthenticated, doctorController.getAllSchedule);
     router.delete('/api/delete-schedule', userIsAuthenticated, doctorController.deleteSchedule);
-    router.get('/api/get-clinics', userIsAuthenticated, clinicController.getClinics);
 
     // doctor
     router.post('/api/post-info-doctor', userIsAuthenticated, doctorController.postInfoDoctor);

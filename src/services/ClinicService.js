@@ -38,7 +38,82 @@ const createClinic = (data) => {
     });
 };
 
-const getAllClinic = (data) => {
+let updateClinic = (id, data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let clinic = await db.Clinic.findOne({
+                where: { id: id },
+            });
+            if (clinic) {
+                // if (data.name) {
+                //     let clinicExist = await db.Clinic.findOne({
+                //         where: { name: data.name },
+                //     });
+                //     if (clinicExist && clinicExist.id !== id) {
+                //         return resolve({
+                //             errCode: 2,
+                //             message: 'Clinic name is already in use',
+                //         });
+                //     }
+                // }
+                await db.Clinic.update(
+                    {
+                        name: data.name && data.name.trim(),
+                        type: data.type && data.type.trim(),
+                        address: data.address && data.address.trim(),
+                        contentMarkdown: data.contentMarkdown && data.contentMarkdown.trim(),
+                        contentHtml: data.contentHtml && data.contentHtml,
+                        description: data.description && data.description,
+                        image: data.image && data.image,
+                    },
+                    {
+                        where: {
+                            id: id,
+                        },
+                    },
+                );
+                resolve({
+                    errCode: 0,
+                    message: 'OK',
+                });
+            } else {
+                resolve({
+                    errCode: 2,
+                    message: 'Clinic is not exist',
+                });
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+let deleteClinic = (id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let status = await db.Clinic.destroy({
+                where: {
+                    id: id,
+                },
+            });
+            if (status) {
+                resolve({
+                    errCode: 0,
+                    message: 'OK',
+                });
+            } else {
+                resolve({
+                    errCode: 2,
+                    message: 'Clinic is not exist!',
+                });
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
+
+const getAllClinic = () => {
     return new Promise(async (resolve, reject) => {
         try {
             let allClinic = await db.Clinic.findAll();
@@ -85,46 +160,43 @@ const getClinicDetailById = (clinicId) => {
 const getClinics = (name, page, per_page) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let clinicList = {};
+            let clinics = {};
             const offset = (page - 1) * per_page;
 
-            const queryOptions = {
-                attributes: {
-                    exclude: ['contentMarkdown', 'contentHtml', 'createdAt', 'updatedAt'],
-                },
-                order: [['id', 'DESC']],
-                raw: true,
-                nest: true,
-            };
-
-            if (name === 'ALL') {
-                if (page && per_page) {
-                    clinicList = await db.Clinic.findAndCountAll({
-                        ...queryOptions,
-                        offset,
-                        limit: per_page,
-                    });
-                    resolve({
-                        count: clinicList.count,
-                        rows: clinicList.rows,
-                    });
-                } else {
-                    clinicList = await db.Clinic.findAll(queryOptions);
-                    resolve(clinicList);
-                }
-            } else if (name) {
-                clinicList = await db.Clinic.findAndCountAll({
-                    where: { date },
-                    ...queryOptions,
+            if (name && page && per_page && name === 'ALL') {
+                clinics = await db.Clinic.findAndCountAll({
                     offset,
                     limit: per_page,
+                    attributes: {
+                        exclude: ['createdAt', 'updatedAt'],
+                    },
+                    order: [['id', 'DESC']],
                 });
-                resolve(clinicList);
             }
+
+            if (name && !page && !per_page && name === 'ALL') {
+                clinics = await db.Clinic.findAll({
+                    attributes: {
+                        exclude: ['createdAt', 'updatedAt'],
+                    },
+                });
+            }
+
+            if (name && name !== 'ALL') {
+                clinics = await db.User.findOne({
+                    where: {
+                        name: name,
+                    },
+                    attributes: {
+                        exclude: ['createdAt', 'updatedAt'],
+                    },
+                });
+            }
+            resolve(clinics);
         } catch (error) {
             reject(error);
         }
     });
 };
 
-module.exports = { createClinic, getAllClinic, getClinicDetailById, getClinics };
+module.exports = { createClinic, updateClinic, deleteClinic, getAllClinic, getClinicDetailById, getClinics };
