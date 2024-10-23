@@ -9,7 +9,7 @@ const search = async (req, res) => {
     try {
         let results = [];
         
-        // Tìm kiếm bác sĩ theo tên
+        
         if (type && (type.trim() === 'doctor' || type.trim() === 'all')) {
             const doctors = await User.findAll({
                 where: {
@@ -33,43 +33,90 @@ const search = async (req, res) => {
                         { model: Specialty, as: 'specialtyData' },
                         { model: User, as: 'doctorInfoData' },
                     ],
-                    raw: true // Thêm raw: true nếu bạn chỉ cần dữ liệu thô
+                    raw: true 
                 });
                 results = results.concat(doctorInfoList);
             }
             console.log('Doctors found:', doctors);
         }
 
-        // Tìm kiếm bệnh viện theo tên
+       
         if (type && (type.trim() === 'clinic' || type.trim() === 'all')) {
             const clinics = await Clinic.findAll({
                 where: {
                     name: { [Op.like]: `%${q}%` }
                 },
-                raw: true // Thêm raw: true nếu bạn chỉ cần dữ liệu thô
+                raw: true 
             });
             
             if (clinics.length > 0) {
                 results = results.concat(clinics);
             }
         }
-
-        // Tìm kiếm triệu chứng theo tên trong bảng DoctorInfo hoặc các mô hình liên quan
-        if (type && (type.trim() === 'symptom' || type.trim() === 'all')) {
-            const symptoms = await DoctorInfo.findAll({
+        if (type && (type.trim() === 'clinic' || type.trim() === 'all')) {
+            const specialties = await Specialty.findAll({
                 where: {
-                    note: { [Op.like]: `%${q}%` }
-                },
-                include: [
-                    { model: User, as: 'doctorInfoData' },
-                    { model: Clinic, as: 'clinicData' },
-                    { model: Specialty, as: 'specialtyData' },
-                ],
-                raw: true // Thêm raw: true nếu bạn chỉ cần dữ liệu thô
+                    name: { [Op.like]: `%${q}%` }  
+                }
             });
 
-            if (symptoms.length > 0) {
-                results = results.concat(symptoms);
+            if (specialties.length > 0) {
+                const clinicIds = specialties.map(clinics => clinics.id); 
+
+               
+                const doctorsWithClinic = await DoctorInfo.findAll({
+                    where: {
+                        clinicId: {
+                            [Op.in]: clinicIds  
+                        }
+                    },
+                    include: [
+                        {
+                            model: User,
+                            as: 'doctorInfoData',  
+                            attributes: ['firstName', 'lastName']  
+                        },
+                        { model: Clinic, as: 'clinicData' },  
+                        { model: Specialty, as: 'specialtyData' }  
+                    ],
+                    raw: true 
+                });
+
+                results = results.concat(doctorsWithClinic);  
+            }
+        }
+
+       
+        if (type && (type.trim() === 'specialty' || type.trim() === 'all')) {
+            const specialties = await Specialty.findAll({
+                where: {
+                    name: { [Op.like]: `%${q}%` }  
+                }
+            });
+
+            if (specialties.length > 0) {
+                const specialtyIds = specialties.map(specialty => specialty.id);  
+
+             
+                const doctorsWithSpecialty = await DoctorInfo.findAll({
+                    where: {
+                        specialtyId: {
+                            [Op.in]: specialtyIds 
+                        }
+                    },
+                    include: [
+                        {
+                            model: User,
+                            as: 'doctorInfoData',  
+                            attributes: ['firstName', 'lastName'] 
+                        },
+                        { model: Clinic, as: 'clinicData' }, 
+                        { model: Specialty, as: 'specialtyData' }  
+                    ],
+                    raw: true 
+                });
+
+                results = results.concat(doctorsWithSpecialty);  
             }
         }
 
