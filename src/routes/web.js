@@ -4,6 +4,7 @@ import doctorController from '../controllers/doctorController';
 import patientController from '../controllers/patientController';
 import specialtyController from '../controllers/specialtyController';
 import clinicController from '../controllers/clinicController';
+import searchController from '../controllers/searchController';
 import { userIsAuthenticated, isAdmin, isDoctor } from '../middleware/authMiddleware';
 import multer from 'multer';
 const upload = multer({ dest: 'uploads/' });
@@ -88,7 +89,12 @@ let initWebRoutes = (app) => {
 
     router.get('/api/get-all-clinic', clinicController.getAllClinic);
     router.get('/api/get-clinic-detail-by-id', clinicController.getClinicDetailById);
+
+    
+    //search
+    router.get('/api/book-exam/search', searchController.search);
     return app.use('/', router);
+
 };
 
 module.exports = initWebRoutes;
