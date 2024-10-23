@@ -38,27 +38,16 @@ const search = async (req, res) => {
         }
 
        
+        
         if (type && (type.trim() === 'clinic' || type.trim() === 'all')) {
             const clinics = await Clinic.findAll({
-                where: {
-                    name: { [Op.like]: `%${q}%` },
-                },
-                raw: true 
-            });
-
-            if (clinics.length > 0) {
-                results = results.concat(clinics);
-            }
-        }
-        if (type && (type.trim() === 'clinic' || type.trim() === 'all')) {
-            const specialties = await Specialty.findAll({
                 where: {
                     name: { [Op.like]: `%${q}%` }  
                 }
             });
 
-            if (specialties.length > 0) {
-                const clinicIds = specialties.map(clinics => clinics.id); 
+            if (clinics.length > 0) {
+                const clinicIds = clinics.map(clinics => clinics.id); 
 
                
                 const doctorsWithClinic = await DoctorInfo.findAll({
