@@ -20,6 +20,7 @@ const nonSecurePath = [
 
 const verifyToken = (token) => {
     const key = process.env.ACCESS_TOKEN;
+    console.log(`Verifying token ${token}`);
     let decode = null;
     try {
         decode = jwt.verify(token, key);
@@ -42,20 +43,62 @@ const userIsAuthenticated = (req, res, next) => {
     // }
     const cookieToken = req.cookies?.accessToken;
     const tokenFromHeader = extractToken(req);
+    console.log('Cookie token:', cookieToken);
+    console.log('Header token:', tokenFromHeader);
+
     if (cookieToken || tokenFromHeader) {
         let token = cookieToken ? cookieToken : tokenFromHeader;
-        const decode = verifyToken(token);
-        if (decode) {
+
+        try {
+            const decode = jwt.verify(token, process.env.ACCESS_TOKEN);
             req.user = decode;
             req.token = token;
             next();
-        } else {
-            return res.status(401).json({
-                errCode: '-1',
-                message: 'Unauthorization',
-            });
+        } catch (error) {
+            console.log('userIsAuthenticated err', error);
+            // Token hết hạn hoặc không hợp lệ
+            if (error.name === 'TokenExpiredError') {
+                console.log('Access token hết hạn. Thực hiện cấp lại...');
+                // Lấy refresh token từ cookie
+                const refreshToken = req.cookies?.refreshToken;
+                if (!refreshToken) {
+                    return res.status(401).json({
+                        errCode: '-1',
+                        message: 'Refresh token không được cung cấp',
+                    });
+                }
+                // Thực hiện cấp lại access token mới bằng refresh token
+                try {
+                    const decodedRefresh = jwt.verify(refreshToken, process.env.REFRESH_TOKEN);
+
+                    // Tạo access token mới
+                    const newAccessToken = jwt.sign({ id: decodedRefresh.id }, process.env.ACCESS_TOKEN, {
+                        expiresIn: '1d',
+                    });
+
+                    // Lưu token mới vào cookie
+                    res.cookie('accessToken', newAccessToken, { httpOnly: true, secure: true, sameSite: 'Strict' });
+
+                    // Gắn thông tin người dùng và token mới vào request
+                    req.user = decodedRefresh;
+                    req.token = newAccessToken;
+
+                    next();
+                } catch (refreshError) {
+                    return res.status(403).json({
+                        errCode: '-1',
+                        message: 'Refresh token không hợp lệ hoặc đã hết hạn',
+                    });
+                }
+            } else {
+                return res.status(401).json({
+                    errCode: '-1',
+                    message: 'Access token không hợp lệ',
+                });
+            }
         }
     } else {
+        // Nếu không có token
         return res.status(401).json({
             errCode: '-1',
             message: 'Unauthorization',

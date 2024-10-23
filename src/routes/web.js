@@ -59,7 +59,7 @@ let initWebRoutes = (app) => {
     router.delete('/api/delete-schedule', userIsAuthenticated, doctorController.deleteSchedule);
 
     // doctor
-    router.post('/api/post-info-doctor', userIsAuthenticated, doctorController.postInfoDoctor);
+    router.post('/api/post-info-doctor', userIsAuthenticated, isAdmin, doctorController.postInfoDoctor);
     router.post('/api/create-schedule-time', userIsAuthenticated, doctorController.createScheduleTime);
     router.get(
         '/api/lists-appointment-patient',

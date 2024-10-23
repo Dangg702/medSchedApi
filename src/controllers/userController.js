@@ -19,7 +19,7 @@ const handleLogin = async (req, res) => {
 
         // Set cookies
         // setRefreshTokenCookie(res, refreshToken);
-        res.cookie('refreshToken', refreshToken, {
+        res.cookie('refreshToken', result.tokens?.refreshToken, {
             httpOnly: true,
             // secure: true, // Nếu sử dụng HTTPS
             sameSite: 'Strict',
@@ -61,6 +61,7 @@ const refreshToken = async (req, res, next) => {
     //     return res.status(404).json({ message: 'The token is required', errCode: -1 });
     // }
     const refreshToken = req.cookies.refreshToken;
+    console.log('Refresh token', refreshToken);
     if (!refreshToken) return res.sendStatus(401);
     const response = await refreshTokenJwtService(token);
     res.status(200).json({ message: 'Success', errCode: 0, data: response });
