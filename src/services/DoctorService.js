@@ -20,6 +20,12 @@ const getTopDoctor = (limit) => {
                 include: [
                     { model: db.Allcode, as: 'positionData', attributes: ['valueEn', 'valueVi'] },
                     { model: db.Allcode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+                    {
+                        model: db.DoctorInfo,
+                        as: 'doctorInfoData',
+                        attributes: ['specialtyId'],
+                        include: [{ model: db.Specialty, as: 'specialtyData', attributes: ['valueEn', 'valueVi'] }],
+                    },
                 ],
                 raw: true,
                 nest: true,

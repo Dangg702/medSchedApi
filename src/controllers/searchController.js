@@ -38,6 +38,7 @@ const search = async (req, res) => {
             searchResults = await User.findAll({
                 where: {
                     firstName: { [Op.like]: `%${q}%` },
+                    roleId: 'R2', //R2 là bác sĩ
                 },
                 include: [
                     { model: DoctorInfo, as: 'doctorInfoData', where: { specialtyId: specialty }, required: false },
