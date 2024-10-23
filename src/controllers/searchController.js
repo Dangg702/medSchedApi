@@ -5,7 +5,7 @@ const search = async (req, res) => {
     const { q, type } = req.query;
     console.log('Search query:', q);
     console.log('Search type:', type);
-    
+
     try {
         let results = [];
         
@@ -13,20 +13,17 @@ const search = async (req, res) => {
         if (type && (type.trim() === 'doctor' || type.trim() === 'all')) {
             const doctors = await User.findAll({
                 where: {
-                    [Op.or]: [
-                        { firstName: { [Op.like]: `%${q}%` } },
-                        { lastName: { [Op.like]: `%${q}%` } },
-                    ]
-                }
+                    [Op.or]: [{ firstName: { [Op.like]: `%${q}%` } }, { lastName: { [Op.like]: `%${q}%` } }],
+                },
             });
 
             if (doctors.length > 0) {
-                const doctorIds = doctors.map(doctor => doctor.id);
+                const doctorIds = doctors.map((doctor) => doctor.id);
                 const doctorInfoList = await DoctorInfo.findAll({
                     where: {
                         doctorId: {
-                            [Op.in]: doctorIds
-                        }
+                            [Op.in]: doctorIds,
+                        },
                     },
                     include: [
                         { model: Clinic, as: 'clinicData' },
@@ -44,11 +41,11 @@ const search = async (req, res) => {
         if (type && (type.trim() === 'clinic' || type.trim() === 'all')) {
             const clinics = await Clinic.findAll({
                 where: {
-                    name: { [Op.like]: `%${q}%` }
+                    name: { [Op.like]: `%${q}%` },
                 },
                 raw: true 
             });
-            
+
             if (clinics.length > 0) {
                 results = results.concat(clinics);
             }

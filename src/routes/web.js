@@ -90,11 +90,10 @@ let initWebRoutes = (app) => {
     router.get('/api/get-all-clinic', clinicController.getAllClinic);
     router.get('/api/get-clinic-detail-by-id', clinicController.getClinicDetailById);
 
-    
     //search
     router.get('/api/book-exam/search', searchController.search);
-    return app.use('/', router);
 
+    return app.use('/', router);
 };
 
 module.exports = initWebRoutes;
