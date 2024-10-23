@@ -103,7 +103,7 @@ const getAllSpecialty = async (req, res) => {
                 data: specialties.rows,
             });
         } else if (name && !page && !per_page) {
-            let specialties = await SpecialtyService.getAllSpecialty(name);
+            let specialties = await SpecialtyService.getAllSpecialty(name, null, null);
             return res.status(200).json({
                 errCode: 0,
                 message: 'OK',

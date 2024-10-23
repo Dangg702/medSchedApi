@@ -62,16 +62,12 @@ const postInfoDoctor = (data) => {
                 !data.selectedDoctor.value ||
                 !data.contentHtml ||
                 !data.contentMarkdown ||
-                !data.description ||
                 !data.action ||
                 !data.selectedPrice ||
                 !data.selectedCity ||
                 !data.selectedPayment ||
                 !data.selectedSpecialty ||
-                !data.selectedClinic ||
-                !data.nameClinic ||
-                !data.addressClinic ||
-                !data.note
+                !data.selectedClinic
             ) {
                 resolve({
                     errCode: 1,
@@ -81,7 +77,9 @@ const postInfoDoctor = (data) => {
                 // for markdown table
                 if (data.action === 'create') {
                     await db.Markdown.create({
-                        date: +data.selectedDoctor.value,
+                        doctorId: +data.selectedDoctor.value,
+                        clinicId: +data.selectedClinic,
+                        specialtyId: +data.selectedSpecialty,
                         contentHtml: data.contentHtml,
                         contentMarkdown: data.contentMarkdown,
                         description: data.description,
@@ -93,6 +91,8 @@ const postInfoDoctor = (data) => {
                 } else if (data.action === 'edit') {
                     await db.Markdown.update(
                         {
+                            clinicId: +data.selectedClinic,
+                            specialtyId: +data.selectedSpecialty,
                             contentHtml: data.contentHtml,
                             contentMarkdown: data.contentMarkdown,
                             description: data.description,
@@ -177,6 +177,8 @@ const getDoctorById = (doctorId) => {
                             { model: db.Allcode, as: 'priceData', attributes: ['valueEn', 'valueVi'] },
                             { model: db.Allcode, as: 'paymentData', attributes: ['valueEn', 'valueVi'] },
                             { model: db.Allcode, as: 'provinceData', attributes: ['valueEn', 'valueVi'] },
+                            { model: db.Clinic, as: 'clinicData', attributes: ['name', 'address'] },
+                            { model: db.Specialty, as: 'specialtyData', attributes: ['valueEn', 'valueVi'] },
                         ],
                     },
                 ],
@@ -240,6 +242,8 @@ const getExtraInfoDoctorById = (doctorId) => {
                     { model: db.Allcode, as: 'priceData', attributes: ['valueEn', 'valueVi'] },
                     { model: db.Allcode, as: 'paymentData', attributes: ['valueEn', 'valueVi'] },
                     { model: db.Allcode, as: 'provinceData', attributes: ['valueEn', 'valueVi'] },
+                    { model: db.Clinic, as: 'clinicData', attributes: ['name', 'address'] },
+                    { model: db.Specialty, as: 'specialtyData', attributes: ['valueEn', 'valueVi'] },
                 ],
                 raw: true,
                 nest: true,
