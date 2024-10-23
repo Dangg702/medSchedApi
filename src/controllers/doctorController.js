@@ -124,15 +124,14 @@ const createScheduleTime = async (req, res) => {
 
 const getScheduleTime = async (req, res) => {
     try {
-        let doctorId = req.query.doctorId;
-        let date = req.query.date;
-        if (!doctorId || !date) {
+        let { date } = req.query;
+        if (!date) {
             return res.status(200).json({
                 errCode: 1,
-                message: 'Missing required parameter',
+                message: 'Missing required parameter: date',
             });
         } else {
-            let data = await DoctorService.getScheduleTime(doctorId, date);
+            let data = await DoctorService.getScheduleTime(date);
             return res.status(200).json(data);
         }
     } catch (err) {

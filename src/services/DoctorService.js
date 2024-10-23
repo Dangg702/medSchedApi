@@ -2,7 +2,7 @@ import db from '../models';
 import _, { includes } from 'lodash';
 import moment from 'moment';
 import dotenvFlow from 'dotenv-flow';
-import { fn, col } from 'sequelize';
+import { Op, fn, col } from 'sequelize';
 dotenvFlow.config();
 const MAX_SCHEDULE_NUMBER = process.env.MAX_SCHEDULE_NUMBER || 10;
 
@@ -312,47 +312,103 @@ const createScheduleTime = (data) => {
     });
 };
 
-const getScheduleTime = (doctorId, date) => {
+const getScheduleTime = (date) => {
     return new Promise(async (resolve, reject) => {
+        console.log(date)
+
         try {
-            if (!doctorId || !date) {
-                resolve({
-                    errCode: 1,
-                    message: 'Missing required parameter. Please check again!',
-                });
-            } else {
-                let data = await db.Schedule.findAll({
+            let results = [];
+
+            // Kiểm tra nếu có ngày tìm kiếm
+            if (date) {
+                const checkDate = moment(date, 'YYYY-MM-DD');
+                const formattedDate = moment(date).format('YYYY-MM-DD');
+                const currentTime = moment(); // Thời gian hiện tại
+                //console.log('formattedDate', formattedDate);
+                //console.log('currentTime', currentTime);
+                
+                if (checkDate.isBefore(currentTime, 'day')) {
+                    return resolve({
+                        errCode: 0,
+                        data: []
+                    });
+                }
+                // Tìm các lịch khám theo ngày
+                const schedules = await db.Schedule.findAll({
                     where: {
-                        doctorId,
-                        date,
+                        // Chuyển đổi định dạng dd/mm/yyyy sang YYYY-MM-DD để so sánh
+                        date: {
+                            [Op.eq]: moment(formattedDate, 'YYYY-MM-DD').format('DD/MM/YYYY')
+                        }
                     },
-                    attributes: ['date', 'timeType', 'doctorId'],
                     include: [
-                        {
-                            model: db.Allcode,
-                            as: 'timeData',
-                            attributes: ['valueEn', 'valueVi'],
-                        },
                         {
                             model: db.User,
                             as: 'doctorData',
-                            attributes: ['firstName', 'lastName'],
+                            attributes: ['firstName', 'lastName'], // Thông tin bác sĩ
+                        },
+                        {
+                            model: db.Allcode,
+                            as: 'timeData',
+                            attributes: ['valueVi'], // Giá trị giờ khám
+                        },
+                        {
+                            model: db.DoctorInfo,
+                            as: 'doctorInfoData',
+                            attributes: ['priceId', 'clinicId', 'specialtyId'], // Thông tin bổ sung về bác sĩ
                         },
                     ],
                     raw: true,
                     nest: true,
                 });
-                if (!data) data = [];
-                resolve({
-                    errCode: 0,
-                    data,
-                });
+
+                // Kiểm tra nếu ngày nhập là ngày hiện tại
+                if (checkDate.isSame(currentTime, 'day')) {
+                    // Lọc lịch khám dựa trên giờ bắt đầu chỉ khi ngày nhập là hiện tại
+                    results = schedules.filter(schedule => {
+                        const [startTime] = schedule.timeData.valueVi.split(' - ');
+                        const scheduleStartTime = moment(startTime, 'HH:mm');
+                        return scheduleStartTime.isAfter(moment()); // Chỉ lấy lịch sau giờ hiện tại
+                    }).map(schedule => ({
+                        date: schedule.date,
+                        time: schedule.timeData.valueVi,
+                        doctorId: schedule.doctorId,
+                        doctorName: `${schedule.doctorData.firstName} ${schedule.doctorData.lastName}`,
+                        priceId: schedule.doctorInfoData.priceId,
+                        clinicId: schedule.doctorInfoData.clinicId,
+                        specialtyId: schedule.doctorInfoData.specialtyId,
+                    }));
+                } else {
+                    // Nếu ngày nhập sau ngày hiện tại, trả về tất cả lịch
+                    results = schedules.map(schedule => ({
+                        date: schedule.date,
+                        time: schedule.timeData.valueVi,
+                        doctorId: schedule.doctorId,
+                        doctorName: `${schedule.doctorData.firstName} ${schedule.doctorData.lastName}`,
+                        priceId: schedule.doctorInfoData.priceId,
+                        clinicId: schedule.doctorInfoData.clinicId,
+                        specialtyId: schedule.doctorInfoData.specialtyId,
+                    }));
+                }
             }
+            let data = results;
+            if (!data) data = [];
+
+            resolve({
+                errCode: 0,
+                data,
+            });
         } catch (error) {
-            reject(error);
+            console.error('Error getScheduleTime: ', error);
+            reject({
+                errCode: 1,
+                errMessage: 'Error from server',
+            });
         }
     });
 };
+
+
 
 const getListAppointmentPatients = (doctorId, date) => {
     return new Promise(async (resolve, reject) => {
