@@ -1,77 +1,82 @@
-const { User, Specialty, Clinic, DoctorInfo } = require('../models');
-const { Op } = require('sequelize'); // Dùng để tìm kiếm theo LIKE
+import { User, DoctorInfo, Specialty, Clinic } from '../models';
+import { Op } from 'sequelize';
 
 const search = async (req, res) => {
-    const { q, type, specialty } = req.query;
-
-    let searchResults = [];
+    const { q, type } = req.query;
+    console.log('Search query:', q);
+    console.log('Search type:', type);
 
     try {
-        // Tìm kiếm toàn bộ các thực thể
-        if (type === 'all') {
+        let results = [];
+
+        // Tìm kiếm bác sĩ theo tên
+        if (type && (type.trim() === 'doctor' || type.trim() === 'all')) {
             const doctors = await User.findAll({
                 where: {
-                    firstName: { [Op.like]: `%${q}%` },
+                    [Op.or]: [{ firstName: { [Op.like]: `%${q}%` } }, { lastName: { [Op.like]: `%${q}%` } }],
                 },
-                include: [
-                    { model: DoctorInfo, as: 'doctorInfoData', where: { specialtyId: specialty }, required: false },
-                ],
             });
 
+            if (doctors.length > 0) {
+                const doctorIds = doctors.map((doctor) => doctor.id);
+                const doctorInfoList = await DoctorInfo.findAll({
+                    where: {
+                        doctorId: {
+                            [Op.in]: doctorIds,
+                        },
+                    },
+                    include: [
+                        { model: Clinic, as: 'clinicData' },
+                        { model: Specialty, as: 'specialtyData' },
+                        { model: User, as: 'doctorInfoData' },
+                    ],
+                    raw: true, // Thêm raw: true nếu bạn chỉ cần dữ liệu thô
+                });
+                results = results.concat(doctorInfoList);
+            }
+            console.log('Doctors found:', doctors);
+        }
+
+        // Tìm kiếm bệnh viện theo tên
+        if (type && (type.trim() === 'clinic' || type.trim() === 'all')) {
             const clinics = await Clinic.findAll({
                 where: {
                     name: { [Op.like]: `%${q}%` },
                 },
+                raw: true, // Thêm raw: true nếu bạn chỉ cần dữ liệu thô
             });
 
-            const specialties = await Specialty.findAll({
-                where: {
-                    valueVi: { [Op.like]: `%${q}%` },
-                },
-            });
-
-            searchResults = [...doctors, ...clinics, ...specialties];
+            if (clinics.length > 0) {
+                results = results.concat(clinics);
+            }
         }
 
-        // Tìm kiếm theo loại cụ thể
-        if (type === 'doctor') {
-            searchResults = await User.findAll({
+        // Tìm kiếm triệu chứng theo tên trong bảng DoctorInfo hoặc các mô hình liên quan
+        if (type && (type.trim() === 'symptom' || type.trim() === 'all')) {
+            const symptoms = await DoctorInfo.findAll({
                 where: {
                     firstName: { [Op.like]: `%${q}%` },
                     roleId: 'R2', //R2 là bác sĩ
                 },
                 include: [
-                    { model: DoctorInfo, as: 'doctorInfoData', where: { specialtyId: specialty }, required: false },
+                    { model: User, as: 'doctorInfoData' },
+                    { model: Clinic, as: 'clinicData' },
+                    { model: Specialty, as: 'specialtyData' },
                 ],
+                raw: true, // Thêm raw: true nếu bạn chỉ cần dữ liệu thô
             });
-        } else if (type === 'clinic') {
-            searchResults = await Clinic.findAll({
-                where: {
-                    name: { [Op.like]: `%${q}%` },
-                },
-            });
-        } else if (type === 'hospital') {
-            searchResults = await Clinic.findAll({
-                where: {
-                    type: 'hospital',
-                    name: { [Op.like]: `%${q}%` },
-                },
-            });
-        } else if (type === 'specialty') {
-            searchResults = await Specialty.findAll({
-                where: {
-                    valueVi: { [Op.like]: `%${q}%` },
-                },
-            });
+
+            if (symptoms.length > 0) {
+                results = results.concat(symptoms);
+            }
         }
 
-        return res.status(200).json({ results: searchResults });
+        console.log('Final results:', results);
+        return res.json(results);
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: 'Lỗi khi tìm kiếm' });
+        return res.status(500).json({ message: 'Error retrieving data' });
     }
 };
 
-module.exports = {
-    search,
-};
+export default { search };
