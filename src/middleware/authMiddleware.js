@@ -40,7 +40,7 @@ const userIsAuthenticated = (req, res, next) => {
     // if (nonSecurePath.includes(req.path)) {
     //     return next();
     // }
-    const cookieToken = req.cookies?.access_token;
+    const cookieToken = req.cookies?.accessToken;
     const tokenFromHeader = extractToken(req);
     if (cookieToken || tokenFromHeader) {
         let token = cookieToken ? cookieToken : tokenFromHeader;
@@ -95,7 +95,7 @@ const isDoctor = (req, res, next) => {
 };
 
 const authMiddleware = (req, res, next) => {
-    const token = req.cookies.access_token;
+    const token = req.cookies.accessToken;
     if (token) {
         jwt.verify(token, process.env.ACCESS_TOKEN, (err, user) => {
             if (err) {
@@ -123,7 +123,7 @@ const authMiddleware = (req, res, next) => {
 };
 
 const authUserMiddleware = (req, res, next) => {
-    const token = req.cookies.access_token;
+    const token = req.cookies.accessToken;
     const userName = req.params.name;
 
     if (token) {
@@ -144,12 +144,12 @@ const authUserMiddleware = (req, res, next) => {
 };
 
 const authenticateToken = (req, res, next) => {
-    const access_token = req.cookies.access_token;
-    if (!access_token) {
+    const accessToken = req.cookies.accessToken;
+    if (!accessToken) {
         req.user = null;
         next();
     } else {
-        jwt.verify(access_token, process.env.ACCESS_TOKEN, function (err, user) {
+        jwt.verify(accessToken, process.env.ACCESS_TOKEN, function (err, user) {
             if (err) {
                 console.error('Error decoding JWT:', err);
                 res.render('403', { layout: false });

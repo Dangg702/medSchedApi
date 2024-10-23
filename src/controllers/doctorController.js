@@ -248,7 +248,6 @@ const getAllSchedule = async (req, res) => {
 const deleteSchedule = async (req, res) => {
     try {
         let id = req.query.id;
-        console.log('id: ', id);
         if (!id) {
             return res.status(200).json({
                 errCode: 1,
@@ -271,7 +270,6 @@ module.exports = {
     getTopDoctor,
     getAllDoctors,
     postInfoDoctor,
-    getDoctorById,
     getDoctorById,
     getProfileDoctorById,
     createScheduleTime,
